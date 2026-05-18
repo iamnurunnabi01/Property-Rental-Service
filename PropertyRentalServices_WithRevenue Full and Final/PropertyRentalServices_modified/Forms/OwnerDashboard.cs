@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
@@ -8,115 +8,83 @@ using PropertyRentalServices.Models;
 
 namespace PropertyRentalServices.Forms
 {
-    public class OwnerDashboard : Form
+    public partial class OwnerDashboard : Form
     {
-        private TabControl tabControl;
-        private DataGridView dgvProperties, dgvBookings, dgvOffers;
-        private TextBox txtTitle, txtLocation, txtPrice, txtBedrooms, txtDescription;
-        private ComboBox cmbStatus;
-        private Button btnAdd, btnUpdate, btnDelete, btnClear;
         private int selectedPropertyId = -1;
 
         public OwnerDashboard()
         {
-            InitializeComponents();
-            LoadData();
+            InitializeComponent();
+
+            // Build earnings summary cards and wire up the label fields
+            var card1 = BuildEarnCard("Total Revenue (৳)", "0", System.Drawing.Color.FromArgb(20, 130, 76), out lblEarnTotal);
+            var card2 = BuildEarnCard("Admin Fee 10% (৳)", "0", System.Drawing.Color.FromArgb(180, 50, 50), out lblEarnDeduct);
+            var card3 = BuildEarnCard("Your Net 90% (৳)", "0", System.Drawing.Color.FromArgb(30, 60, 114), out lblEarnNet);
+
+            card1.Margin = new System.Windows.Forms.Padding(0, 0, 16, 0);
+            card2.Margin = new System.Windows.Forms.Padding(0, 0, 16, 0);
+
+            panelEarnSummary.Controls.Add(card1);
+            panelEarnSummary.Controls.Add(card2);
+            panelEarnSummary.Controls.Add(card3);
+
+
+
+            LoadProperties();
+            LoadEarnings();
+            LoadOffers();
         }
 
-        private void InitializeComponents()
+        private void BtnClear_Click(object sender, EventArgs e) { ClearForm(); }
+        private void BtnLogout_Click(object sender, EventArgs e) { Logout(); }
+        private void BtnRefreshEarnings_Click(object sender, EventArgs e) { LoadEarnings(); }
+        private void BtnRefreshOffers_Click(object sender, EventArgs e) { LoadOffers(); }
+        private void OwnerDashboard_FormClosed(object sender, System.Windows.Forms.FormClosedEventArgs e)
         {
-            this.Text = "Owner Dashboard - Property Rental Services";
-            this.Size = new Size(1200, 750);
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = Color.FromArgb(245, 248, 245);
-            this.MinimumSize = new Size(1000, 600);
+            SessionManager.Clear();
+            Application.Exit();
+        }
 
-            // Header
-            var header = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 70,
-                BackColor = Color.FromArgb(20, 150, 120)
-            };
 
-            var lblTitle = new Label
-            {
-                Text = $"🏠  Owner Dashboard  |  Welcome, {SessionManager.UserName}",
-                ForeColor = Color.White,
-                Font = new Font("Segoe UI", 14, FontStyle.Bold),
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(20, 0, 0, 0)
-            };
 
-            var btnLogout = new Button
-            {
-                Text = "Logout",
-                Dock = DockStyle.Right,
-                Width = 100,
-                BackColor = Color.FromArgb(200, 80, 50),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                Cursor = Cursors.Hand
-            };
-            btnLogout.FlatAppearance.BorderSize = 0;
-            btnLogout.Click += (s, e) => Logout();
-
-            header.Controls.Add(lblTitle);
-            header.Controls.Add(btnLogout);
-
-            // Stats
-            var panelStats = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 90,
-                BackColor = Color.FromArgb(245, 248, 245),
-                Padding = new Padding(10, 5, 10, 5)
-            };
-
-            string propCount = DBConnection.ExecuteScalar(
+        private string GetPropCount()
+        {
+            object r = PropertyRentalServices.Database.DBConnection.ExecuteScalar(
                 "SELECT COUNT(*) FROM Property WHERE OwnerId=@Id",
-                new SqlParameter[] { new SqlParameter("@Id", SessionManager.UserId) })?.ToString() ?? "0";
+                new System.Data.SqlClient.SqlParameter[] { new System.Data.SqlClient.SqlParameter("@Id", SessionManager.UserId) });
+            return r?.ToString() ?? "0";
+        }
 
-            string bookingCount = DBConnection.ExecuteScalar(
+        private string GetBookingCount()
+        {
+            object r = PropertyRentalServices.Database.DBConnection.ExecuteScalar(
                 @"SELECT COUNT(*) FROM Booking b JOIN Property p ON b.PropertyId=p.PropertyId
                   WHERE p.OwnerId=@Id AND b.Status='Confirmed'",
-                new SqlParameter[] { new SqlParameter("@Id", SessionManager.UserId) })?.ToString() ?? "0";
+                new System.Data.SqlClient.SqlParameter[] { new System.Data.SqlClient.SqlParameter("@Id", SessionManager.UserId) });
+            return r?.ToString() ?? "0";
+        }
 
-            object totalRentObj = DBConnection.ExecuteScalar(
+        private string GetTotalRent()
+        {
+            object r = PropertyRentalServices.Database.DBConnection.ExecuteScalar(
                 @"SELECT ISNULL(SUM(b.TotalPrice),0) FROM Booking b
                   JOIN Property p ON b.PropertyId=p.PropertyId
                   WHERE p.OwnerId=@Id AND b.Status='Confirmed'",
-                new SqlParameter[] { new SqlParameter("@Id", SessionManager.UserId) });
-            decimal totalRent   = totalRentObj != null ? Convert.ToDecimal(totalRentObj) : 0m;
-            decimal ownerRevenue = totalRent * 0.90m;   // owner keeps 90% after 10% admin deduction
-
-            panelStats.Controls.Add(CreateStat("My Properties",       propCount,                                Color.FromArgb(20, 150, 120),  10));
-            panelStats.Controls.Add(CreateStat("Confirmed Bookings",   bookingCount,                            Color.FromArgb(30,  60, 114), 210));
-            panelStats.Controls.Add(CreateStat("Total Revenue (৳)",    totalRent.ToString("N0"),                Color.FromArgb(200, 100,   0), 410));
-            panelStats.Controls.Add(CreateStat("Revenue after 10% (৳)", ownerRevenue.ToString("N0"),           Color.FromArgb(20,  130,  76), 610));
-
-            // Main Tab
-            tabControl = new TabControl
-            {
-                Dock = DockStyle.Fill,
-                Font = new Font("Segoe UI", 10)
-            };
-
-            tabControl.TabPages.Add(CreatePropertyManagementTab());
-            tabControl.TabPages.Add(CreateEarningsTab());
-            tabControl.TabPages.Add(CreateOffersTab());
-
-            var panelMain = new Panel { Dock = DockStyle.Fill, Padding = new Padding(10) };
-            panelMain.Controls.Add(tabControl);
-
-            this.Controls.Add(panelMain);
-            this.Controls.Add(panelStats);
-            this.Controls.Add(header);
-
-            this.FormClosed += (s, e) => { SessionManager.Clear(); Application.Exit(); };
+                new System.Data.SqlClient.SqlParameter[] { new System.Data.SqlClient.SqlParameter("@Id", SessionManager.UserId) });
+            return r != null ? Convert.ToDecimal(r).ToString("N0") : "0";
         }
+
+        private string GetOwnerRevenue()
+        {
+            object r = PropertyRentalServices.Database.DBConnection.ExecuteScalar(
+                @"SELECT ISNULL(SUM(b.TotalPrice),0) FROM Booking b
+                  JOIN Property p ON b.PropertyId=p.PropertyId
+                  WHERE p.OwnerId=@Id AND b.Status='Confirmed'",
+                new System.Data.SqlClient.SqlParameter[] { new System.Data.SqlClient.SqlParameter("@Id", SessionManager.UserId) });
+            decimal total = r != null ? Convert.ToDecimal(r) : 0m;
+            return (total * 0.90m).ToString("N0");
+        }
+
 
         private Panel CreateStat(string title, string value, Color color, int left)
         {
@@ -133,171 +101,9 @@ namespace PropertyRentalServices.Forms
             return card;
         }
 
-        private TabPage CreatePropertyManagementTab()
-        {
-            var tab = new TabPage("🏡  Manage Properties");
-            tab.BackColor = Color.White;
 
-            // Split: Left=Form, Right=Grid
-            var splitContainer = new SplitContainer
-            {
-                Dock = DockStyle.Fill,
-                Orientation = Orientation.Vertical,
-                SplitterDistance = 320,
-                BackColor = Color.White
-            };
-
-            // Left Form
-            var formPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(15), BackColor = Color.White };
-
-            int y = 10;
-            formPanel.Controls.Add(MakeLabel("Property Title", 0, y)); y += 22;
-            txtTitle = MakeTB(0, y, 280, "e.g. Cozy 2BHK Apartment"); y += 38;
-
-            formPanel.Controls.Add(MakeLabel("Location", 0, y)); y += 22;
-            txtLocation = MakeTB(0, y, 280, "e.g. Dhaka, Gulshan"); y += 38;
-
-            formPanel.Controls.Add(MakeLabel("Price per Night (৳)", 0, y)); y += 22;
-            txtPrice = MakeTB(0, y, 280, "e.g. 5000"); y += 38;
-
-            formPanel.Controls.Add(MakeLabel("Bedrooms", 0, y)); y += 22;
-            txtBedrooms = MakeTB(0, y, 280, "e.g. 2"); y += 38;
-
-            formPanel.Controls.Add(MakeLabel("Status", 0, y)); y += 22;
-            cmbStatus = new ComboBox
-            {
-                Location = new Point(0, y), Size = new Size(280, 30),
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Font = new Font("Segoe UI", 10), FlatStyle = FlatStyle.Flat
-            };
-            cmbStatus.Items.AddRange(new object[] { "Available", "Booked", "Unavailable" });
-            cmbStatus.SelectedIndex = 0;
-            y += 38;
-
-            formPanel.Controls.Add(MakeLabel("Description", 0, y)); y += 22;
-            txtDescription = new TextBox
-            {
-                Location = new Point(0, y), Size = new Size(280, 70),
-                Multiline = true, Font = new Font("Segoe UI", 10),
-                BorderStyle = BorderStyle.FixedSingle,
-
-            };
-            y += 80;
-
-            // Buttons
-            var btnPanel = new FlowLayoutPanel
-            {
-                Location = new Point(0, y), Size = new Size(290, 45),
-                FlowDirection = FlowDirection.LeftToRight
-            };
-
-            btnAdd = MakeBtn("➕ Add", Color.FromArgb(20, 150, 120));
-            btnAdd.Click += BtnAdd_Click;
-
-            btnUpdate = MakeBtn("✏️ Update", Color.FromArgb(30, 100, 200));
-            btnUpdate.Click += BtnUpdate_Click;
-
-            btnDelete = MakeBtn("🗑 Delete", Color.FromArgb(200, 50, 50));
-            btnDelete.Click += BtnDelete_Click;
-
-            btnClear = MakeBtn("✖ Clear", Color.Gray);
-            btnClear.Click += (s, e) => ClearForm();
-
-            btnPanel.Controls.AddRange(new Control[] { btnAdd, btnUpdate, btnDelete, btnClear });
-
-            formPanel.Controls.AddRange(new Control[]
-            { txtTitle, txtLocation, txtPrice, txtBedrooms, cmbStatus, txtDescription, btnPanel });
-
-            // Right Grid
-            dgvProperties = CreateDGV();
-            dgvProperties.SelectionChanged += DgvProperties_SelectionChanged;
-
-            splitContainer.Panel1.Controls.Add(formPanel);
-            splitContainer.Panel2.Controls.Add(dgvProperties);
-
-            tab.Controls.Add(splitContainer);
-            return tab;
-        }
-
-        private TabPage CreateEarningsTab()
-        {
-            var tab = new TabPage("💰  Earnings");
-            tab.BackColor = Color.White;
-
-            // ── toolbar ──────────────────────────────────────────────────────
-            var toolbar = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top,
-                Height = 50,
-                BackColor = Color.FromArgb(255, 250, 240),
-                Padding = new Padding(5)
-            };
-
-            var btnRefresh = MakeBtn("🔄 Refresh", Color.FromArgb(200, 100, 0));
-            btnRefresh.Click += (s, e) => LoadEarnings();
-            toolbar.Controls.Add(btnRefresh);
-
-            // ── summary panel ─────────────────────────────────────────────────
-            var panelEarnSummary = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 100,
-                BackColor = Color.FromArgb(255, 252, 245),
-                Padding = new Padding(15, 8, 15, 8)
-            };
-
-            // card 1 — Total Revenue
-            var cardTotal = BuildEarnCard(
-                "Total Revenue (৳)",
-                "0",
-                Color.FromArgb(200, 100, 0),
-                out lblEarnTotal);
-            cardTotal.Location = new Point(15, 8);
-
-            // card 2 — Admin Deduction
-            var cardDeduct = BuildEarnCard(
-                "Admin Deduction 10% (৳)",
-                "0",
-                Color.FromArgb(180, 50, 50),
-                out lblEarnDeduct);
-            cardDeduct.Location = new Point(230, 8);
-
-            // card 3 — Your Revenue
-            var cardNet = BuildEarnCard(
-                "Your Revenue 90% (৳)",
-                "0",
-                Color.FromArgb(20, 130, 76),
-                out lblEarnNet);
-            cardNet.Location = new Point(445, 8);
-
-            panelEarnSummary.Controls.Add(cardTotal);
-            panelEarnSummary.Controls.Add(cardDeduct);
-            panelEarnSummary.Controls.Add(cardNet);
-
-            // ── note ─────────────────────────────────────────────────────────
-            var lblNote = new Label
-            {
-                Text = "ℹ  Admin platform fee is 10% of each confirmed booking. Your net revenue = Total Rent − 10%.",
-                Dock = DockStyle.Top,
-                Height = 28,
-                Font = new Font("Segoe UI", 8.5f, FontStyle.Italic),
-                ForeColor = Color.FromArgb(90, 90, 90),
-                BackColor = Color.FromArgb(255, 253, 230),
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(12, 0, 0, 0)
-            };
-
-            dgvBookings = CreateDGV();
-
-            tab.Controls.Add(dgvBookings);
-            tab.Controls.Add(lblNote);
-            tab.Controls.Add(panelEarnSummary);
-            tab.Controls.Add(toolbar);
-            return tab;
-        }
 
         // labels for the earnings summary cards
-        private Label lblEarnTotal, lblEarnDeduct, lblEarnNet;
 
         private Panel BuildEarnCard(string title, string initialValue, Color color, out Label valueLabel)
         {
@@ -309,40 +115,12 @@ namespace PropertyRentalServices.Forms
 
             card.Controls.Add(lbl);
             card.Controls.Add(val);
+            // Allow double-click navigation in Visual Studio designer
+            lbl.Click += (s, ev) => MessageBox.Show($"Earnings Card: {title}", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
             valueLabel = val;
             return card;
         }
 
-        private TabPage CreateOffersTab()
-        {
-            var tab = new TabPage("🎁  My Offers");
-            tab.BackColor = Color.White;
-
-            dgvOffers = CreateDGV();
-
-            var toolbar = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top,
-                Height = 50,
-                BackColor = Color.FromArgb(250, 240, 255),
-                Padding = new Padding(5)
-            };
-
-            var btnAddOffer = MakeBtn("➕ Add Offer", Color.FromArgb(150, 50, 200));
-            btnAddOffer.Click += BtnAddOffer_Click;
-
-            var btnDeleteOffer = MakeBtn("🗑 Delete Offer", Color.FromArgb(200, 50, 50));
-            btnDeleteOffer.Click += BtnDeleteOffer_Click;
-
-            var btnRefresh = MakeBtn("🔄 Refresh", Color.Gray);
-            btnRefresh.Click += (s, e) => LoadOffers();
-
-            toolbar.Controls.AddRange(new Control[] { btnAddOffer, btnDeleteOffer, btnRefresh });
-
-            tab.Controls.Add(dgvOffers);
-            tab.Controls.Add(toolbar);
-            return tab;
-        }
 
         private void LoadData()
         {
@@ -643,44 +421,9 @@ namespace PropertyRentalServices.Forms
             cmbStatus.SelectedIndex = 0;
         }
 
-        private Label MakeLabel(string text, int x, int y) =>
-            new Label { Text = text, Font = new Font("Segoe UI", 9, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60), Location = new Point(x, y), AutoSize = true };
 
-        private TextBox MakeTB(int x, int y, int w, string ph) =>
-            new TextBox { Location = new Point(x, y), Size = new Size(w, 30), Font = new Font("Segoe UI", 10), BorderStyle = BorderStyle.FixedSingle };
 
-        private Button MakeBtn(string text, Color color)
-        {
-            var btn = new Button
-            {
-                Text = text, BackColor = color, ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9, FontStyle.Bold),
-                Height = 34, AutoSize = true, Padding = new Padding(6, 0, 6, 0),
-                Cursor = Cursors.Hand, Margin = new Padding(3)
-            };
-            btn.FlatAppearance.BorderSize = 0;
-            return btn;
-        }
 
-        private DataGridView CreateDGV()
-        {
-            var dgv = new DataGridView
-            {
-                Dock = DockStyle.Fill, ReadOnly = true, AllowUserToAddRows = false,
-                AllowUserToDeleteRows = false,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                BackgroundColor = Color.White, BorderStyle = BorderStyle.None,
-                GridColor = Color.FromArgb(230, 235, 245),
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                RowHeadersVisible = false, Font = new Font("Segoe UI", 9.5f)
-            };
-            dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(20, 150, 120);
-            dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
-            dgv.ColumnHeadersHeight = 38;
-            dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(245, 255, 250);
-            return dgv;
-        }
 
         private void Logout()
         {
@@ -691,5 +434,153 @@ namespace PropertyRentalServices.Forms
                 this.Close();
             }
         }
+
+        private void LblBedrooms_Click(object sender, EventArgs e)
+        {
+            txtBedrooms.Focus();
+            txtBedrooms.SelectAll();
+        }
+
+        private void LblDescription_Click(object sender, EventArgs e)
+        {
+            txtDescription.Focus();
+            txtDescription.SelectAll();
+        }
+
+        private void LblEarningsNote_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Earnings Breakdown:\n\n" +
+                "\u2022 Total Revenue: All confirmed booking payments\n" +
+                "\u2022 Admin Fee (10%): Platform service charge\n" +
+                "\u2022 Your Net (90%): Amount you receive after fees",
+                "Earnings Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblHeaderTitle_Click(object sender, EventArgs e)
+        {
+            LoadData();
+            MessageBox.Show("Dashboard refreshed successfully.", "Refreshed",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblLocation_Click(object sender, EventArgs e)
+        {
+            txtLocation.Focus();
+            txtLocation.SelectAll();
+        }
+
+        private void LblPrice_Click(object sender, EventArgs e)
+        {
+            txtPrice.Focus();
+            txtPrice.SelectAll();
+        }
+
+        private void LblStatus_Click(object sender, EventArgs e)
+        {
+            cmbStatus.Focus();
+            cmbStatus.DroppedDown = true;
+        }
+
+        private void LblTitle_Click(object sender, EventArgs e)
+        {
+            txtTitle.Focus();
+            txtTitle.SelectAll();
+        }
+
+        private void TxtBedrooms_Enter(object sender, EventArgs e)
+        {
+            txtBedrooms.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtBedrooms_TextChanged(object sender, EventArgs e)
+        {
+            bool valid = int.TryParse(txtBedrooms.Text, out int val) && val > 0 && val <= 20;
+            txtBedrooms.BackColor = (txtBedrooms.Text.Length == 0 || valid)
+                ? System.Drawing.Color.FromArgb(240, 248, 255)
+                : System.Drawing.Color.FromArgb(255, 235, 235);
+        }
+
+        private void TxtDescription_Enter(object sender, EventArgs e)
+        {
+            txtDescription.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtDescription_TextChanged(object sender, EventArgs e)
+        {
+            int remaining = 500 - txtDescription.Text.Length;
+            txtDescription.BackColor = remaining >= 0
+                ? System.Drawing.Color.FromArgb(240, 248, 255)
+                : System.Drawing.Color.FromArgb(255, 235, 235);
+        }
+
+        private void TxtLocation_Enter(object sender, EventArgs e)
+        {
+            txtLocation.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtLocation_TextChanged(object sender, EventArgs e)
+        {
+            txtLocation.BackColor = txtLocation.Text.Trim().Length >= 3
+                ? System.Drawing.Color.FromArgb(235, 255, 235)
+                : System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtPrice_Enter(object sender, EventArgs e)
+        {
+            txtPrice.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtPrice_TextChanged(object sender, EventArgs e)
+        {
+            bool valid = decimal.TryParse(txtPrice.Text, out decimal val) && val > 0;
+            txtPrice.BackColor = (txtPrice.Text.Length == 0 || valid)
+                ? System.Drawing.Color.FromArgb(240, 248, 255)
+                : System.Drawing.Color.FromArgb(255, 235, 235);
+        }
+
+        private void TxtTitle_Enter(object sender, EventArgs e)
+        {
+            txtTitle.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtTitle_TextChanged(object sender, EventArgs e)
+        {
+            bool valid = txtTitle.Text.Trim().Length >= 3;
+            txtTitle.BackColor = (txtTitle.Text.Length == 0 || valid)
+                ? System.Drawing.Color.FromArgb(240, 248, 255)
+                : System.Drawing.Color.FromArgb(255, 235, 235);
+        }
+        private void CmbStatus_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // Status changed — remind owner what each status means
+            string selected = cmbStatus.SelectedItem?.ToString();
+            if (selected == "Available")
+                lblStatus.Text = "Status: Available (visible to customers for booking)";
+            else if (selected == "Rented")
+                lblStatus.Text = "Status: Rented (currently occupied — hidden from search)";
+            else if (selected == "Maintenance")
+                lblStatus.Text = "Status: Maintenance (temporarily unavailable)";
+            else
+                lblStatus.Text = "Status";
+        }
+
+        private void LblEarnTotal_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show($"Total Revenue: \u09F3{lblEarnTotal.Text}\n\nThis is the combined confirmed booking income for all your properties.",
+                "Total Revenue", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblEarnDeduct_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show($"Admin Fee (10%): \u09F3{lblEarnDeduct.Text}\n\nThis is the platform commission deducted from your total revenue.",
+                "Admin Deduction", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblEarnNet_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show($"Your Net Earnings (90%): \u09F3{lblEarnNet.Text}\n\nThis is the amount you receive after the 10% admin fee is deducted.",
+                "Net Earnings", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
     }
 }

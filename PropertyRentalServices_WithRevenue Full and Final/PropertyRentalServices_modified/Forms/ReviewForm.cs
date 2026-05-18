@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data.SqlClient;
 using System.Drawing;
 using System.Windows.Forms;
@@ -6,13 +6,10 @@ using PropertyRentalServices.Database;
 
 namespace PropertyRentalServices.Forms
 {
-    public class ReviewForm : Form
+    public partial class ReviewForm : Form
     {
         private int propertyId, userId;
         private string propertyTitle;
-        private NumericUpDown numRating;
-        private TextBox txtComment;
-        private Button[] starButtons = new Button[5];
         private int selectedRating = 5;
 
         public ReviewForm(int propId, string propTitle, int uid)
@@ -20,110 +17,28 @@ namespace PropertyRentalServices.Forms
             propertyId = propId;
             propertyTitle = propTitle;
             userId = uid;
-            InitializeComponents();
-        }
-
-        private void InitializeComponents()
-        {
-            this.Text = "Write a Review";
-            this.Size = new Size(460, 420);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.BackColor = Color.White;
-
-            var header = new Panel { Dock = DockStyle.Top, Height = 65, BackColor = Color.FromArgb(255, 140, 0) };
-            header.Controls.Add(new Label
-            {
-                Text = "⭐  Write a Review",
-                ForeColor = Color.White, Font = new Font("Segoe UI", 14, FontStyle.Bold),
-                Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter
-            });
-
-            int y = 80, x = 30, w = 390;
-
-            Controls.Add(new Label
-            {
-                Text = $"Property: {propertyTitle}",
-                Location = new Point(x, y), AutoSize = true,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                ForeColor = Color.FromArgb(60, 60, 60)
-            });
-            y += 35;
-
-            Controls.Add(new Label
-            {
-                Text = "Your Rating:",
-                Location = new Point(x, y), AutoSize = true,
-                Font = new Font("Segoe UI", 9, FontStyle.Bold), ForeColor = Color.Gray
-            });
-            y += 25;
-
-            // Star rating buttons
-            var starPanel = new Panel { Location = new Point(x, y), Size = new Size(280, 45) };
-            for (int i = 0; i < 5; i++)
-            {
-                int starIdx = i + 1;
-                starButtons[i] = new Button
-                {
-                    Text = "★", Location = new Point(i * 52, 0), Size = new Size(48, 40),
-                    Font = new Font("Segoe UI", 18), FlatStyle = FlatStyle.Flat,
-                    BackColor = Color.FromArgb(255, 200, 0), ForeColor = Color.White,
-                    Cursor = Cursors.Hand, Tag = starIdx
-                };
-                starButtons[i].FlatAppearance.BorderSize = 0;
-                starButtons[i].Click += (s, e) =>
-                {
-                    selectedRating = (int)((Button)s).Tag;
-                    UpdateStars();
-                };
-                starPanel.Controls.Add(starButtons[i]);
-            }
-            Controls.Add(starPanel);
-            y += 55;
-
-            Controls.Add(new Label
-            {
-                Text = "Your Comment:",
-                Location = new Point(x, y), AutoSize = true,
-                Font = new Font("Segoe UI", 9, FontStyle.Bold), ForeColor = Color.Gray
-            });
-            y += 22;
-
-            txtComment = new TextBox
-            {
-                Location = new Point(x, y), Size = new Size(w, 100),
-                Multiline = true, Font = new Font("Segoe UI", 10),
-                BorderStyle = BorderStyle.FixedSingle,
-
-            };
-            Controls.Add(txtComment);
-            y += 115;
-
-            var btnSubmit = new Button
-            {
-                Text = "✅  Submit Review",
-                Location = new Point(x, y), Size = new Size(w, 44),
-                Font = new Font("Segoe UI", 11, FontStyle.Bold),
-                BackColor = Color.FromArgb(255, 140, 0), ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand
-            };
-            btnSubmit.FlatAppearance.BorderSize = 0;
-            btnSubmit.Click += BtnSubmit_Click;
-            Controls.Add(btnSubmit);
-
-            Controls.Add(header);
+            InitializeComponent();
+            lblPropertyName.Text = "Property: " + propertyTitle;
             UpdateStars();
         }
 
+        private void BtnStar_Click(object sender, EventArgs e)
+        {
+            selectedRating = (int)((System.Windows.Forms.Button)sender).Tag;
+            UpdateStars();
+        }
+
+
+
         private void UpdateStars()
         {
+            var stars = new System.Windows.Forms.Button[] { btnStar1, btnStar2, btnStar3, btnStar4, btnStar5 };
             for (int i = 0; i < 5; i++)
             {
-                starButtons[i].BackColor = i < selectedRating
-                    ? Color.FromArgb(255, 190, 0)
-                    : Color.FromArgb(220, 220, 220);
-                starButtons[i].ForeColor = i < selectedRating ? Color.White : Color.Gray;
+                stars[i].BackColor = i < selectedRating
+                    ? System.Drawing.Color.FromArgb(255, 190, 0)
+                    : System.Drawing.Color.FromArgb(220, 220, 220);
+                stars[i].ForeColor = i < selectedRating ? System.Drawing.Color.White : System.Drawing.Color.Gray;
             }
         }
 
@@ -169,9 +84,55 @@ namespace PropertyRentalServices.Forms
                 this.Close();
             }
         }
+
+        private void LblPropertyName_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show($"You are writing a review for:\n{lblPropertyName.Text}\n\nRate the property using the stars and add your comment below.",
+                "Property Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblRatingPrompt_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Star Rating Guide:\n\n" +
+                "\u2605 1 Star - Poor\n" +
+                "\u2605\u2605 2 Stars - Fair\n" +
+                "\u2605\u2605\u2605 3 Stars - Good\n" +
+                "\u2605\u2605\u2605\u2605 4 Stars - Very Good\n" +
+                "\u2605\u2605\u2605\u2605\u2605 5 Stars - Excellent\n\n" +
+                "Click a star button to set your rating.",
+                "Rating Guide", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblCommentPrompt_Click(object sender, EventArgs e)
+        {
+            txtComment.Focus();
+            if (txtComment.Text.Length == 0)
+                MessageBox.Show("Share your experience: mention cleanliness, location, amenities, and value for money.",
+                    "Comment Tip", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void TxtComment_Enter(object sender, EventArgs e)
+        {
+            txtComment.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void lblHeaderTitle_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void TxtComment_TextChanged(object sender, EventArgs e)
+        {
+            int len = txtComment.Text.Trim().Length;
+            txtComment.BackColor = len == 0
+                ? System.Drawing.Color.FromArgb(240, 248, 255)
+                : len < 10
+                    ? System.Drawing.Color.FromArgb(255, 235, 235)
+                    : System.Drawing.Color.FromArgb(235, 255, 235);
+        }
     }
 
-    public class ReviewViewForm : Form
+    public partial class ReviewViewForm : Form
     {
         private int propertyId;
         private string propertyTitle;
@@ -180,45 +141,14 @@ namespace PropertyRentalServices.Forms
         {
             propertyId = propId;
             propertyTitle = propTitle;
-            InitializeComponents();
+            InitializeComponent();
+            this.Text = $"Reviews - {propertyTitle}";
+            lblHeaderTitle.Text = $"⭐  Reviews for: {propertyTitle}";
             LoadReviews();
         }
 
-        private DataGridView dgv;
 
-        private void InitializeComponents()
-        {
-            this.Text = $"Reviews - {propertyTitle}";
-            this.Size = new Size(700, 500);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.BackColor = Color.White;
 
-            var header = new Panel { Dock = DockStyle.Top, Height = 65, BackColor = Color.FromArgb(255, 140, 0) };
-            header.Controls.Add(new Label
-            {
-                Text = $"⭐  Reviews for: {propertyTitle}",
-                ForeColor = Color.White, Font = new Font("Segoe UI", 13, FontStyle.Bold),
-                Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter
-            });
-
-            dgv = new DataGridView
-            {
-                Dock = DockStyle.Fill, ReadOnly = true, AllowUserToAddRows = false,
-                AllowUserToDeleteRows = false, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                BackgroundColor = Color.White, BorderStyle = BorderStyle.None,
-                GridColor = Color.FromArgb(230, 235, 245),
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                RowHeadersVisible = false, Font = new Font("Segoe UI", 9.5f)
-            };
-            dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(255, 140, 0);
-            dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
-            dgv.ColumnHeadersHeight = 38;
-            dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(255, 252, 240);
-
-            this.Controls.Add(dgv);
-            this.Controls.Add(header);
-        }
 
         private void LoadReviews()
         {
@@ -249,6 +179,12 @@ namespace PropertyRentalServices.Forms
                 };
                 this.Controls.Add(lbl);
             }
+        }
+
+        private void LblHeaderTitle_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show($"Showing all reviews for:\n{this.Text.Replace("Reviews - ", "")}\n\nReviews are submitted by verified customers who completed a booking.",
+                "Reviews Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }

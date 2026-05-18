@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data.SqlClient;
 using System.Drawing;
 using System.Windows.Forms;
@@ -6,159 +6,20 @@ using PropertyRentalServices.Database;
 
 namespace PropertyRentalServices.Forms
 {
-    public class RegisterForm : Form
+    public partial class RegisterForm : Form
     {
-        private TextBox txtName, txtEmail, txtPassword, txtConfirm;
-        private ComboBox cmbRole;
-        private Button btnRegister, btnBack;
-        private Panel panelLeft, panelRight;
 
         public RegisterForm()
         {
-            InitializeComponents();
+            InitializeComponent();
         }
 
-        private void InitializeComponents()
+        private void BtnBack_Click(object sender, EventArgs e)
         {
-            this.Text = "Property Rental Services - Register";
-            this.Size = new Size(900, 600);
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.FormBorderStyle = FormBorderStyle.FixedSingle;
-            this.MaximizeBox = false;
-            this.BackColor = Color.White;
-
-            // Left branding panel
-            panelLeft = new Panel
-            {
-                Dock = DockStyle.Left,
-                Width = 380,
-                BackColor = Color.FromArgb(20, 150, 120)
-            };
-
-            var lblBrand = new Label
-            {
-                Text = "🏠\r\nJoin Us\r\nToday",
-                ForeColor = Color.White,
-                Font = new Font("Segoe UI", 22, FontStyle.Bold),
-                TextAlign = ContentAlignment.MiddleCenter,
-                Dock = DockStyle.Fill
-            };
-
-            var lblTagline = new Label
-            {
-                Text = "Register as Owner or Customer",
-                ForeColor = Color.FromArgb(180, 240, 220),
-                Font = new Font("Segoe UI", 11),
-                TextAlign = ContentAlignment.MiddleCenter,
-                Dock = DockStyle.Bottom,
-                Height = 60
-            };
-
-            panelLeft.Controls.Add(lblBrand);
-            panelLeft.Controls.Add(lblTagline);
-
-            // Right panel
-            panelRight = new Panel
-            {
-                Dock = DockStyle.Fill,
-                BackColor = Color.White
-            };
-
-            int y = 40;
-            int x = 50;
-            int w = 360;
-
-            var lblTitle = new Label
-            {
-                Text = "Create Account",
-                Font = new Font("Segoe UI", 20, FontStyle.Bold),
-                ForeColor = Color.FromArgb(20, 150, 120),
-                Location = new Point(x, y), AutoSize = true
-            };
-
-            y += 40;
-            var lblSub = new Label
-            {
-                Text = "Fill in the details below",
-                Font = new Font("Segoe UI", 10),
-                ForeColor = Color.Gray,
-                Location = new Point(x, y), AutoSize = true
-            };
-
-            y += 40;
-            panelRight.Controls.Add(MakeLabel("Full Name", x, y));
-            y += 20;
-            txtName = MakeTextBox(x, y, w, "Your full name");
-
-            y += 50;
-            panelRight.Controls.Add(MakeLabel("Email Address", x, y));
-            y += 20;
-            txtEmail = MakeTextBox(x, y, w, "email@example.com");
-
-            y += 50;
-            panelRight.Controls.Add(MakeLabel("Password", x, y));
-            y += 20;
-            txtPassword = MakeTextBox(x, y, w, "Enter password", true);
-
-            y += 50;
-            panelRight.Controls.Add(MakeLabel("Confirm Password", x, y));
-            y += 20;
-            txtConfirm = MakeTextBox(x, y, w, "Repeat password", true);
-
-            y += 50;
-            panelRight.Controls.Add(MakeLabel("Register As", x, y));
-            y += 20;
-            cmbRole = new ComboBox
-            {
-                Location = new Point(x, y),
-                Size = new Size(w, 35),
-                Font = new Font("Segoe UI", 11),
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                FlatStyle = FlatStyle.Flat
-            };
-            cmbRole.Items.AddRange(new object[] { "Customer", "Owner" });
-            cmbRole.SelectedIndex = 0;
-
-            y += 55;
-            btnRegister = new Button
-            {
-                Text = "CREATE ACCOUNT",
-                Location = new Point(x, y),
-                Size = new Size(w, 45),
-                Font = new Font("Segoe UI", 11, FontStyle.Bold),
-                BackColor = Color.FromArgb(20, 150, 120),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            btnRegister.FlatAppearance.BorderSize = 0;
-            btnRegister.Click += BtnRegister_Click;
-
-            y += 55;
-            btnBack = new Button
-            {
-                Text = "← Back to Login",
-                Location = new Point(x, y),
-                Size = new Size(w, 35),
-                Font = new Font("Segoe UI", 10),
-                BackColor = Color.White,
-                ForeColor = Color.FromArgb(20, 150, 120),
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            btnBack.FlatAppearance.BorderSize = 0;
-            btnBack.Click += (s, e) => this.Close();
-
-            panelRight.Controls.AddRange(new Control[]
-            {
-                lblTitle, lblSub, txtName, txtEmail,
-                txtPassword, txtConfirm, cmbRole,
-                btnRegister, btnBack
-            });
-
-            this.Controls.Add(panelRight);
-            this.Controls.Add(panelLeft);
+            this.Close();
         }
+
+
 
         private Label MakeLabel(string text, int x, int y)
         {
@@ -245,5 +106,131 @@ namespace PropertyRentalServices.Forms
                 this.Close();
             }
         }
+
+        private void LblBrand_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Property Rental Services\nCreate your account to start browsing or listing properties.",
+                "About", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblTagline_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Join thousands of property owners and renters on our platform.",
+                "About", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblTitle_Click(object sender, EventArgs e)
+        {
+            txtName.Focus();
+        }
+
+        private void LblSubtitle_Click(object sender, EventArgs e)
+        {
+            txtName.Focus();
+        }
+
+        private void LblName_Click(object sender, EventArgs e)
+        {
+            txtName.Focus();
+            txtName.SelectAll();
+        }
+
+        private void LblEmail_Click(object sender, EventArgs e)
+        {
+            txtEmail.Focus();
+            txtEmail.SelectAll();
+        }
+
+        private void LblPassword_Click(object sender, EventArgs e)
+        {
+            txtPassword.Focus();
+            txtPassword.SelectAll();
+        }
+
+        private void LblConfirm_Click(object sender, EventArgs e)
+        {
+            txtConfirm.Focus();
+            txtConfirm.SelectAll();
+        }
+
+        private void LblRole_Click(object sender, EventArgs e)
+        {
+            cmbRole.Focus();
+            cmbRole.DroppedDown = true;
+        }
+
+        private void TxtName_Enter(object sender, EventArgs e)
+        {
+            txtName.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtName_TextChanged(object sender, EventArgs e)
+        {
+            bool valid = txtName.Text.Trim().Length >= 2;
+            txtName.BackColor = (txtName.Text.Length == 0 || valid)
+                ? System.Drawing.Color.FromArgb(240, 248, 255)
+                : System.Drawing.Color.FromArgb(255, 235, 235);
+        }
+
+        private void TxtEmail_Enter(object sender, EventArgs e)
+        {
+            txtEmail.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtEmail_TextChanged(object sender, EventArgs e)
+        {
+            bool valid = txtEmail.Text.Contains("@") && txtEmail.Text.Contains(".");
+            txtEmail.BackColor = (txtEmail.Text.Length == 0 || valid)
+                ? System.Drawing.Color.FromArgb(240, 248, 255)
+                : System.Drawing.Color.FromArgb(255, 235, 235);
+        }
+
+        private void TxtPassword_Enter(object sender, EventArgs e)
+        {
+            txtPassword.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtPassword_TextChanged(object sender, EventArgs e)
+        {
+            string pwd = txtPassword.Text;
+            if (pwd.Length == 0)
+                txtPassword.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+            else if (pwd.Length < 6)
+                txtPassword.BackColor = System.Drawing.Color.FromArgb(255, 235, 235);
+            else
+                txtPassword.BackColor = System.Drawing.Color.FromArgb(235, 255, 235);
+
+            // Live confirm match check
+            if (txtConfirm.Text.Length > 0)
+                txtConfirm.BackColor = (txtConfirm.Text == pwd)
+                    ? System.Drawing.Color.FromArgb(235, 255, 235)
+                    : System.Drawing.Color.FromArgb(255, 235, 235);
+        }
+
+        private void TxtConfirm_Enter(object sender, EventArgs e)
+        {
+            txtConfirm.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtConfirm_TextChanged(object sender, EventArgs e)
+        {
+            if (txtConfirm.Text.Length == 0)
+                txtConfirm.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+            else
+                txtConfirm.BackColor = (txtConfirm.Text == txtPassword.Text)
+                    ? System.Drawing.Color.FromArgb(235, 255, 235)
+                    : System.Drawing.Color.FromArgb(255, 235, 235);
+        }
+        private void CmbRole_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string selected = cmbRole.SelectedItem?.ToString();
+            if (selected == "Owner")
+                MessageBox.Show("Owner Account: You will be able to list properties, manage bookings, and track earnings.",
+                    "Role Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            else if (selected == "Customer")
+                MessageBox.Show("Customer Account: You will be able to browse properties, book stays, and leave reviews.",
+                    "Role Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
     }
 }

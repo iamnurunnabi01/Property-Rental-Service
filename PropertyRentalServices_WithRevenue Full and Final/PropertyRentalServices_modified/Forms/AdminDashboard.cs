@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
@@ -8,104 +8,54 @@ using PropertyRentalServices.Models;
 
 namespace PropertyRentalServices.Forms
 {
-    public class AdminDashboard : Form
+    public partial class AdminDashboard : Form
     {
-        private Panel panelSidebar, panelContent, panelHeader;
-        private DataGridView dgvUsers, dgvProperties, dgvBookings, dgvReviews, dgvRevenue;
-        private TabControl tabControl;
-        private Label lblWelcome;
-        private Label lblTotalRentValue, lblAdminShareValue, lblTotalPaymentsValue;
+        // Runtime-built summary card labels (created in constructor via CreateSummaryCard)
+        private System.Windows.Forms.Label lblTotalRentValue;
+        private System.Windows.Forms.Label lblAdminShareValue;
+        private System.Windows.Forms.Label lblTotalPaymentsValue;
 
         public AdminDashboard()
         {
-            InitializeComponents();
-            LoadAllData();
+            InitializeComponent();
+
+            // Build revenue summary cards and wire up the label fields
+            var card1 = CreateSummaryCard("Total Rent Collected (৳)", "0", System.Drawing.Color.FromArgb(20, 130, 76), out lblTotalRentValue);
+            var card2 = CreateSummaryCard("Admin 10% Share (৳)", "0", System.Drawing.Color.FromArgb(30, 60, 114), out lblAdminShareValue);
+            var card3 = CreateSummaryCard("Confirmed Payments", "0", System.Drawing.Color.FromArgb(180, 80, 0), out lblTotalPaymentsValue);
+
+            card1.Margin = new System.Windows.Forms.Padding(0, 0, 16, 0);
+            card2.Margin = new System.Windows.Forms.Padding(0, 0, 16, 0);
+
+            panelRevenueSummary.Controls.Add(card1);
+            panelRevenueSummary.Controls.Add(card2);
+            panelRevenueSummary.Controls.Add(card3);
+
+            // Wire click events after labels are created by CreateSummaryCard
+            lblTotalRentValue.Click    += new System.EventHandler(LblTotalRentValue_Click);
+            lblAdminShareValue.Click   += new System.EventHandler(LblAdminShareValue_Click);
+            lblTotalPaymentsValue.Click += new System.EventHandler(LblTotalPaymentsValue_Click);
+
+            LoadUsers();
+            LoadProperties();
+            LoadBookings();
+            LoadReviews();
+            LoadRevenue();
         }
 
-        private void InitializeComponents()
+        private void BtnRefreshUsers_Click(object sender, EventArgs e) { LoadUsers(); }
+        private void BtnRefreshProperties_Click(object sender, EventArgs e) { LoadProperties(); }
+        private void BtnRefreshBookings_Click(object sender, EventArgs e) { LoadBookings(); }
+        private void BtnRefreshReviews_Click(object sender, EventArgs e) { LoadReviews(); }
+        private void BtnRefreshRevenue_Click(object sender, EventArgs e) { LoadRevenue(); }
+        private void BtnLogout_Click(object sender, EventArgs e) { Logout(); }
+        private void AdminDashboard_FormClosed(object sender, System.Windows.Forms.FormClosedEventArgs e)
         {
-            this.Text = "SuperAdmin Dashboard - Property Rental Services";
-            this.Size = new Size(1200, 750);
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = Color.FromArgb(245, 247, 250);
-            this.MinimumSize = new Size(1000, 600);
-
-            // Header
-            panelHeader = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 70,
-                BackColor = Color.FromArgb(30, 60, 114)
-            };
-
-            lblWelcome = new Label
-            {
-                Text = $"👑  SuperAdmin Panel  |  Welcome, {SessionManager.UserName}",
-                ForeColor = Color.White,
-                Font = new Font("Segoe UI", 14, FontStyle.Bold),
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(20, 0, 0, 0)
-            };
-
-            var btnLogout = new Button
-            {
-                Text = "Logout",
-                Dock = DockStyle.Right,
-                Width = 100,
-                BackColor = Color.FromArgb(200, 50, 50),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                Cursor = Cursors.Hand
-            };
-            btnLogout.FlatAppearance.BorderSize = 0;
-            btnLogout.Click += (s, e) => Logout();
-
-            panelHeader.Controls.Add(lblWelcome);
-            panelHeader.Controls.Add(btnLogout);
-
-            // Stats Row
-            var panelStats = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 100,
-                BackColor = Color.FromArgb(245, 247, 250),
-                Padding = new Padding(10)
-            };
-
-            panelStats.Controls.Add(CreateStatCard("Total Users", GetCount("Users"), Color.FromArgb(30, 60, 114), 10));
-            panelStats.Controls.Add(CreateStatCard("Properties", GetCount("Property"), Color.FromArgb(20, 150, 120), 210));
-            panelStats.Controls.Add(CreateStatCard("Bookings", GetCount("Booking"), Color.FromArgb(255, 140, 0), 410));
-            panelStats.Controls.Add(CreateStatCard("Revenue (৳)", GetTotalRevenue(), Color.FromArgb(150, 50, 200), 610));
-
-            // Tab Control
-            tabControl = new TabControl
-            {
-                Dock = DockStyle.Fill,
-                Font = new Font("Segoe UI", 10),
-                Margin = new Padding(10)
-            };
-
-            tabControl.TabPages.Add(CreateUsersTab());
-            tabControl.TabPages.Add(CreatePropertiesTab());
-            tabControl.TabPages.Add(CreateBookingsTab());
-            tabControl.TabPages.Add(CreateReviewsTab());
-            tabControl.TabPages.Add(CreateRevenueTab());
-
-            panelContent = new Panel { Dock = DockStyle.Fill, Padding = new Padding(10) };
-            panelContent.Controls.Add(tabControl);
-
-            this.Controls.Add(panelContent);
-            this.Controls.Add(panelStats);
-            this.Controls.Add(panelHeader);
-
-            this.FormClosed += (s, e) =>
-            {
-                SessionManager.Clear();
-                Application.Exit();
-            };
+            SessionManager.Clear();
+            Application.Exit();
         }
+
+
 
         private Panel CreateStatCard(string title, string value, Color color, int left)
         {
@@ -155,145 +105,11 @@ namespace PropertyRentalServices.Forms
             return result != null ? Convert.ToDecimal(result).ToString("N0") : "0";
         }
 
-        private TabPage CreateUsersTab()
-        {
-            var tab = new TabPage("👥  All Users");
-            tab.BackColor = Color.White;
 
-            var toolbar = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top,
-                Height = 50,
-                BackColor = Color.FromArgb(240, 244, 255),
-                Padding = new Padding(5)
-            };
 
-            var btnRefresh = MakeButton("🔄 Refresh", Color.FromArgb(30, 60, 114));
-            btnRefresh.Click += (s, e) => LoadUsers();
 
-            var btnDeleteOwner = MakeButton("🗑 Delete Owner (Low Rating)", Color.FromArgb(200, 50, 50));
-            btnDeleteOwner.Click += BtnDeleteOwner_Click;
 
-            toolbar.Controls.AddRange(new Control[] { btnRefresh, btnDeleteOwner });
 
-            dgvUsers = CreateDGV();
-            tab.Controls.Add(dgvUsers);
-            tab.Controls.Add(toolbar);
-            return tab;
-        }
-
-        private TabPage CreatePropertiesTab()
-        {
-            var tab = new TabPage("🏠  All Properties");
-            tab.BackColor = Color.White;
-
-            var toolbar = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top,
-                Height = 50,
-                BackColor = Color.FromArgb(240, 255, 248),
-                Padding = new Padding(5)
-            };
-
-            var btnRefresh = MakeButton("🔄 Refresh", Color.FromArgb(20, 150, 120));
-            btnRefresh.Click += (s, e) => LoadProperties();
-
-            toolbar.Controls.Add(btnRefresh);
-
-            dgvProperties = CreateDGV();
-            tab.Controls.Add(dgvProperties);
-            tab.Controls.Add(toolbar);
-            return tab;
-        }
-
-        private TabPage CreateBookingsTab()
-        {
-            var tab = new TabPage("📅  All Bookings");
-            tab.BackColor = Color.White;
-
-            var toolbar = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top,
-                Height = 50,
-                BackColor = Color.FromArgb(255, 250, 240),
-                Padding = new Padding(5)
-            };
-
-            var btnRefresh = MakeButton("🔄 Refresh", Color.FromArgb(255, 140, 0));
-            btnRefresh.Click += (s, e) => LoadBookings();
-            toolbar.Controls.Add(btnRefresh);
-
-            dgvBookings = CreateDGV();
-            tab.Controls.Add(dgvBookings);
-            tab.Controls.Add(toolbar);
-            return tab;
-        }
-
-        private TabPage CreateReviewsTab()
-        {
-            var tab = new TabPage("⭐  All Reviews");
-            tab.BackColor = Color.White;
-
-            var toolbar = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top,
-                Height = 50,
-                BackColor = Color.FromArgb(250, 245, 255),
-                Padding = new Padding(5)
-            };
-
-            var btnRefresh = MakeButton("🔄 Refresh", Color.FromArgb(150, 50, 200));
-            btnRefresh.Click += (s, e) => LoadReviews();
-            toolbar.Controls.Add(btnRefresh);
-
-            dgvReviews = CreateDGV();
-            tab.Controls.Add(dgvReviews);
-            tab.Controls.Add(toolbar);
-            return tab;
-        }
-
-        private DataGridView CreateDGV()
-        {
-            var dgv = new DataGridView
-            {
-                Dock = DockStyle.Fill,
-                ReadOnly = true,
-                AllowUserToAddRows = false,
-                AllowUserToDeleteRows = false,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                BackgroundColor = Color.White,
-                BorderStyle = BorderStyle.None,
-                GridColor = Color.FromArgb(230, 235, 245),
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                RowHeadersVisible = false,
-                Font = new Font("Segoe UI", 9.5f)
-            };
-            dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(30, 60, 114);
-            dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
-            dgv.ColumnHeadersHeight = 38;
-            dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 255);
-            return dgv;
-        }
-
-        private Button MakeButton(string text, Color color)
-        {
-            var btn = new Button
-            {
-                Text = text,
-                BackColor = color,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 9, FontStyle.Bold),
-                Height = 36,
-                AutoSize = true,
-                Padding = new Padding(8, 0, 8, 0),
-                Cursor = Cursors.Hand,
-                Margin = new Padding(5, 5, 5, 5)
-            };
-            btn.FlatAppearance.BorderSize = 0;
-            return btn;
-        }
 
         private void LoadAllData()
         {
@@ -384,84 +200,6 @@ namespace PropertyRentalServices.Forms
             }
         }
 
-        private TabPage CreateRevenueTab()
-        {
-            var tab = new TabPage("💰  Revenue (10%)");
-            tab.BackColor = Color.White;
-
-            // ── toolbar ──────────────────────────────────────────────────────
-            var toolbar = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top,
-                Height = 50,
-                BackColor = Color.FromArgb(240, 255, 245),
-                Padding = new Padding(5)
-            };
-
-            var btnRefresh = MakeButton("🔄 Refresh", Color.FromArgb(20, 150, 120));
-            btnRefresh.Click += (s, e) => LoadRevenue();
-            toolbar.Controls.Add(btnRefresh);
-
-            // ── summary cards row ─────────────────────────────────────────────
-            var panelSummary = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 110,
-                BackColor = Color.FromArgb(248, 255, 251),
-                Padding = new Padding(15, 10, 15, 10)
-            };
-
-            // Card: Total Rent Collected
-            var cardTotalRent = CreateSummaryCard(
-                "Total Rent Collected (৳)",
-                "0",
-                Color.FromArgb(30, 130, 76),
-                out lblTotalRentValue);
-            cardTotalRent.Location = new Point(15, 10);
-
-            // Card: Admin 10% Share
-            var cardAdminShare = CreateSummaryCard(
-                "Admin Revenue @ 10% (৳)",
-                "0",
-                Color.FromArgb(22, 90, 170),
-                out lblAdminShareValue);
-            cardAdminShare.Location = new Point(230, 10);
-
-            // Card: Total Payments Processed
-            var cardPayments = CreateSummaryCard(
-                "Total Payments Processed",
-                "0",
-                Color.FromArgb(180, 100, 10),
-                out lblTotalPaymentsValue);
-            cardPayments.Location = new Point(445, 10);
-
-            panelSummary.Controls.Add(cardTotalRent);
-            panelSummary.Controls.Add(cardAdminShare);
-            panelSummary.Controls.Add(cardPayments);
-
-            // ── note label ───────────────────────────────────────────────────
-            var lblNote = new Label
-            {
-                Text = "ℹ  Admin earns 10% of each confirmed booking's rent. The table below shows per-booking breakdown.",
-                Dock = DockStyle.Top,
-                Height = 30,
-                Font = new Font("Segoe UI", 9, FontStyle.Italic),
-                ForeColor = Color.FromArgb(80, 80, 80),
-                BackColor = Color.FromArgb(255, 253, 230),
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(12, 0, 0, 0)
-            };
-
-            // ── data grid ────────────────────────────────────────────────────
-            dgvRevenue = CreateDGV();
-            dgvRevenue.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(20, 130, 76);
-
-            tab.Controls.Add(dgvRevenue);
-            tab.Controls.Add(lblNote);
-            tab.Controls.Add(panelSummary);
-            tab.Controls.Add(toolbar);
-            return tab;
-        }
 
         /// <summary>Creates a small summary card and exposes its value label.</summary>
         private Panel CreateSummaryCard(string title, string initialValue, Color color, out Label valueLabel)
@@ -560,5 +298,44 @@ namespace PropertyRentalServices.Forms
                 this.Close();
             }
         }
+
+        private void LblRevenueNote_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Revenue Summary:\n\n" +
+                "\u2022 Total Revenue: Sum of all confirmed bookings\n" +
+                "\u2022 Platform Fee (10%): Admin commission collected\n" +
+                "\u2022 Owner Payouts (90%): Earnings distributed to property owners\n\n" +
+                "Click Refresh to reload the latest figures.",
+                "Revenue Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblWelcome_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show($"Welcome, {PropertyRentalServices.Models.SessionManager.UserName}!\n\n" +
+                "You are logged in as Super Admin.\n" +
+                "You have full access to manage users, properties, bookings, reviews, and revenue.",
+                "Admin Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        private void LblTotalRentValue_Click(object sender, EventArgs e)
+        {
+            string val = lblTotalRentValue.Text;
+            MessageBox.Show($"Total Revenue Collected: \u09F3{val}\n\nThis is the combined payment total for all confirmed bookings across the platform.",
+                "Total Revenue", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblAdminShareValue_Click(object sender, EventArgs e)
+        {
+            string val = lblAdminShareValue.Text;
+            MessageBox.Show($"Admin Commission (10%): \u09F3{val}\n\nThis is the platform service fee deducted from each booking. It funds platform operations and support.",
+                "Admin Share", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblTotalPaymentsValue_Click(object sender, EventArgs e)
+        {
+            string val = lblTotalPaymentsValue.Text;
+            MessageBox.Show($"Total Payments Processed: \u09F3{val}\n\nThis reflects the total number of payment transactions completed on the platform.",
+                "Total Payments", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
     }
 }

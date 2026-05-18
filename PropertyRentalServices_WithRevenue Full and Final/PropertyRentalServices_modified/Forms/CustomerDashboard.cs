@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
@@ -8,22 +8,47 @@ using PropertyRentalServices.Models;
 
 namespace PropertyRentalServices.Forms
 {
-    public class CustomerDashboard : Form
+    public partial class CustomerDashboard : Form
     {
-        private TabControl tabControl;
-        private DataGridView dgvProperties, dgvCart, dgvBookings, dgvReviews;
-        private TextBox txtSearch;
-        private ComboBox cmbLocation, cmbBedrooms, cmbStatus;
-        private TextBox txtMinPrice, txtMaxPrice;
         private DataTable cartTable;
 
         public CustomerDashboard()
         {
+            InitializeComponent();
             InitializeCart();
-            InitializeComponents();
+            LoadLocationsToCombo();
             LoadProperties();
             LoadMyBookings();
             LoadMyReviews();
+        }
+
+        private void BtnSearch_Click(object sender, EventArgs e) { LoadProperties(); }
+
+        private void BtnResetFilter_Click(object sender, EventArgs e)
+        {
+            txtSearch.Clear(); txtMinPrice.Clear(); txtMaxPrice.Clear();
+            cmbLocation.SelectedIndex = 0; cmbBedrooms.SelectedIndex = 0; cmbStatus.SelectedIndex = 0;
+            LoadProperties();
+        }
+
+        private void BtnRemoveCart_Click(object sender, EventArgs e)
+        {
+            if (dgvCart.SelectedRows.Count > 0)
+            {
+                cartTable.Rows.RemoveAt(dgvCart.SelectedRows[0].Index);
+                UpdateCartView();
+            }
+            else System.Windows.Forms.MessageBox.Show("Select a cart item to remove.", "Info");
+        }
+
+        private void BtnClearCart_Click(object sender, EventArgs e) { cartTable.Clear(); UpdateCartView(); }
+        private void BtnRefreshBookings_Click(object sender, EventArgs e) { LoadMyBookings(); }
+        private void BtnRefreshReviews_Click(object sender, EventArgs e) { LoadMyReviews(); }
+        private void BtnLogout_Click(object sender, EventArgs e) { Logout(); }
+        private void CustomerDashboard_FormClosed(object sender, System.Windows.Forms.FormClosedEventArgs e)
+        {
+            SessionManager.Clear();
+            System.Windows.Forms.Application.Exit();
         }
 
         private void InitializeCart()
@@ -39,238 +64,11 @@ namespace PropertyRentalServices.Forms
             cartTable.Columns.Add("TotalPrice", typeof(decimal));
         }
 
-        private void InitializeComponents()
-        {
-            this.Text = "Customer Dashboard - Property Rental Services";
-            this.Size = new Size(1200, 760);
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = Color.FromArgb(245, 247, 252);
-            this.MinimumSize = new Size(1000, 600);
 
-            // Header
-            var header = new Panel { Dock = DockStyle.Top, Height = 70, BackColor = Color.FromArgb(30, 100, 200) };
-            var lblTitle = new Label
-            {
-                Text = $"🏠  Property Rental  |  Welcome, {SessionManager.UserName}",
-                ForeColor = Color.White,
-                Font = new Font("Segoe UI", 14, FontStyle.Bold),
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(20, 0, 0, 0)
-            };
-            var btnLogout = new Button
-            {
-                Text = "Logout", Dock = DockStyle.Right, Width = 100,
-                BackColor = Color.FromArgb(200, 50, 50), ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 10, FontStyle.Bold), Cursor = Cursors.Hand
-            };
-            btnLogout.FlatAppearance.BorderSize = 0;
-            btnLogout.Click += (s, e) => Logout();
-            header.Controls.Add(lblTitle);
-            header.Controls.Add(btnLogout);
 
-            tabControl = new TabControl { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 10) };
-            tabControl.TabPages.Add(CreateBrowseTab());
-            tabControl.TabPages.Add(CreateCartTab());
-            tabControl.TabPages.Add(CreateMyBookingsTab());
-            tabControl.TabPages.Add(CreateReviewsTab());
 
-            var panelMain = new Panel { Dock = DockStyle.Fill, Padding = new Padding(8) };
-            panelMain.Controls.Add(tabControl);
-            this.Controls.Add(panelMain);
-            this.Controls.Add(header);
 
-            this.FormClosed += (s, e) => { SessionManager.Clear(); Application.Exit(); };
-        }
 
-        private TabPage CreateBrowseTab()
-        {
-            var tab = new TabPage("🔍  Browse Properties");
-            tab.BackColor = Color.White;
-
-            // Filter Panel
-            var filterPanel = new Panel
-            {
-                Dock = DockStyle.Top, Height = 110,
-                BackColor = Color.FromArgb(235, 242, 255),
-                Padding = new Padding(10, 8, 10, 8)
-            };
-
-            int fx = 10, fy = 8;
-            filterPanel.Controls.Add(MakeLabel("Search:", fx, fy));
-            txtSearch = new TextBox { Location = new Point(fx, fy + 20), Size = new Size(160, 30), Font = new Font("Segoe UI", 10), BorderStyle = BorderStyle.FixedSingle };
-            filterPanel.Controls.Add(txtSearch);
-
-            fx += 175;
-            filterPanel.Controls.Add(MakeLabel("Location:", fx, fy));
-            cmbLocation = new ComboBox { Location = new Point(fx, fy + 20), Size = new Size(140, 30), DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 10), FlatStyle = FlatStyle.Flat };
-            cmbLocation.Items.Add("All");
-            LoadLocationsToCombo();
-            cmbLocation.SelectedIndex = 0;
-            filterPanel.Controls.Add(cmbLocation);
-
-            fx += 155;
-            filterPanel.Controls.Add(MakeLabel("Bedrooms:", fx, fy));
-            cmbBedrooms = new ComboBox { Location = new Point(fx, fy + 20), Size = new Size(100, 30), DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 10), FlatStyle = FlatStyle.Flat };
-            cmbBedrooms.Items.AddRange(new object[] { "Any", "1", "2", "3", "4", "5+" });
-            cmbBedrooms.SelectedIndex = 0;
-            filterPanel.Controls.Add(cmbBedrooms);
-
-            fx += 115;
-            filterPanel.Controls.Add(MakeLabel("Status:", fx, fy));
-            cmbStatus = new ComboBox { Location = new Point(fx, fy + 20), Size = new Size(120, 30), DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 10), FlatStyle = FlatStyle.Flat };
-            cmbStatus.Items.AddRange(new object[] { "All", "Available", "Booked", "Unavailable" });
-            cmbStatus.SelectedIndex = 0;
-            filterPanel.Controls.Add(cmbStatus);
-
-            fx += 135;
-            filterPanel.Controls.Add(MakeLabel("Min Price (৳):", fx, fy));
-            txtMinPrice = new TextBox { Location = new Point(fx, fy + 20), Size = new Size(90, 30), Font = new Font("Segoe UI", 10), BorderStyle = BorderStyle.FixedSingle };
-            filterPanel.Controls.Add(txtMinPrice);
-
-            fx += 105;
-            filterPanel.Controls.Add(MakeLabel("Max Price (৳):", fx, fy));
-            txtMaxPrice = new TextBox { Location = new Point(fx, fy + 20), Size = new Size(90, 30), Font = new Font("Segoe UI", 10), BorderStyle = BorderStyle.FixedSingle };
-            filterPanel.Controls.Add(txtMaxPrice);
-
-            fx += 105;
-            var btnSearch = new Button
-            {
-                Text = "🔍 Search", Location = new Point(fx, fy + 16), Size = new Size(100, 36),
-                BackColor = Color.FromArgb(30, 100, 200), ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 10, FontStyle.Bold), Cursor = Cursors.Hand
-            };
-            btnSearch.FlatAppearance.BorderSize = 0;
-            btnSearch.Click += (s, e) => LoadProperties();
-            filterPanel.Controls.Add(btnSearch);
-
-            fx += 110;
-            var btnReset = new Button
-            {
-                Text = "↺ Reset", Location = new Point(fx, fy + 16), Size = new Size(80, 36),
-                BackColor = Color.Gray, ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 10, FontStyle.Bold), Cursor = Cursors.Hand
-            };
-            btnReset.FlatAppearance.BorderSize = 0;
-            btnReset.Click += (s, e) => { txtSearch.Clear(); txtMinPrice.Clear(); txtMaxPrice.Clear(); cmbLocation.SelectedIndex = 0; cmbBedrooms.SelectedIndex = 0; cmbStatus.SelectedIndex = 0; LoadProperties(); };
-            filterPanel.Controls.Add(btnReset);
-
-            // Action Buttons
-            var actionPanel = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top, Height = 50,
-                BackColor = Color.FromArgb(245, 248, 255), Padding = new Padding(5)
-            };
-
-            var btnAddCart = MakeBtn("🛒 Add to Cart", Color.FromArgb(30, 100, 200));
-            btnAddCart.Click += BtnAddToCart_Click;
-
-            var btnViewReview = MakeBtn("⭐ View Reviews", Color.FromArgb(255, 140, 0));
-            btnViewReview.Click += BtnViewReviews_Click;
-
-            actionPanel.Controls.AddRange(new Control[] { btnAddCart, btnViewReview });
-
-            dgvProperties = CreateDGV(Color.FromArgb(30, 100, 200));
-            tab.Controls.Add(dgvProperties);
-            tab.Controls.Add(actionPanel);
-            tab.Controls.Add(filterPanel);
-            return tab;
-        }
-
-        private TabPage CreateCartTab()
-        {
-            var tab = new TabPage("🛒  Booking Cart");
-            tab.BackColor = Color.White;
-
-            var toolbar = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top, Height = 50,
-                BackColor = Color.FromArgb(240, 255, 245), Padding = new Padding(5)
-            };
-
-            var btnRemove = MakeBtn("❌ Remove Selected", Color.FromArgb(200, 50, 50));
-            btnRemove.Click += (s, e) =>
-            {
-                if (dgvCart.SelectedRows.Count > 0)
-                {
-                    int idx = dgvCart.SelectedRows[0].Index;
-                    cartTable.Rows.RemoveAt(idx);
-                    UpdateCartView();
-                }
-                else MessageBox.Show("Select a cart item to remove.", "Info");
-            };
-
-            var btnCheckout = MakeBtn("✅ Confirm & Pay", Color.FromArgb(20, 150, 80));
-            btnCheckout.Click += BtnCheckout_Click;
-
-            var btnClearCart = MakeBtn("🗑 Clear Cart", Color.Gray);
-            btnClearCart.Click += (s, e) => { cartTable.Rows.Clear(); UpdateCartView(); };
-
-            toolbar.Controls.AddRange(new Control[] { btnRemove, btnCheckout, btnClearCart });
-
-            dgvCart = CreateDGV(Color.FromArgb(20, 150, 80));
-
-            var lblTotal = new Label
-            {
-                Dock = DockStyle.Bottom, Height = 40,
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                ForeColor = Color.FromArgb(20, 150, 80),
-                TextAlign = ContentAlignment.MiddleRight,
-                Padding = new Padding(0, 0, 20, 0),
-                BackColor = Color.FromArgb(240, 255, 245)
-            };
-            lblTotal.Name = "lblCartTotal";
-
-            tab.Controls.Add(dgvCart);
-            tab.Controls.Add(lblTotal);
-            tab.Controls.Add(toolbar);
-            return tab;
-        }
-
-        private TabPage CreateMyBookingsTab()
-        {
-            var tab = new TabPage("📋  My Bookings");
-            tab.BackColor = Color.White;
-
-            var toolbar = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top, Height = 50,
-                BackColor = Color.FromArgb(245, 250, 255), Padding = new Padding(5)
-            };
-
-            var btnRefresh = MakeBtn("🔄 Refresh", Color.FromArgb(30, 60, 114));
-            btnRefresh.Click += (s, e) => LoadMyBookings();
-
-            var btnAddReview = MakeBtn("⭐ Add Review", Color.FromArgb(255, 140, 0));
-            btnAddReview.Click += BtnAddReview_Click;
-
-            toolbar.Controls.AddRange(new Control[] { btnRefresh, btnAddReview });
-
-            dgvBookings = CreateDGV(Color.FromArgb(30, 60, 114));
-            tab.Controls.Add(dgvBookings);
-            tab.Controls.Add(toolbar);
-            return tab;
-        }
-
-        private TabPage CreateReviewsTab()
-        {
-            var tab = new TabPage("⭐  My Reviews");
-            tab.BackColor = Color.White;
-
-            var toolbar = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top, Height = 50,
-                BackColor = Color.FromArgb(255, 250, 240), Padding = new Padding(5)
-            };
-            var btnRefresh = MakeBtn("🔄 Refresh", Color.FromArgb(255, 140, 0));
-            btnRefresh.Click += (s, e) => LoadMyReviews();
-            toolbar.Controls.Add(btnRefresh);
-
-            dgvReviews = CreateDGV(Color.FromArgb(255, 140, 0));
-            tab.Controls.Add(dgvReviews);
-            tab.Controls.Add(toolbar);
-            return tab;
-        }
 
         private void LoadProperties()
         {
@@ -315,9 +113,12 @@ namespace PropertyRentalServices.Forms
 
         private void LoadLocationsToCombo()
         {
+            cmbLocation.Items.Clear();
+            cmbLocation.Items.Add("All");
             DataTable dt = DBConnection.ExecuteQuery("SELECT DISTINCT Location FROM Property ORDER BY Location");
             foreach (DataRow row in dt.Rows)
                 cmbLocation.Items.Add(row["Location"].ToString());
+            cmbLocation.SelectedIndex = 0;
         }
 
         private void BtnAddToCart_Click(object sender, EventArgs e)
@@ -418,9 +219,7 @@ namespace PropertyRentalServices.Forms
             foreach (DataRow r in cartTable.Rows)
                 total += Convert.ToDecimal(r["TotalPrice"]);
 
-            var lblTotal = tabControl.TabPages[1].Controls["lblCartTotal"] as Label;
-            if (lblTotal != null)
-                lblTotal.Text = $"  Cart Total: ৳{total:N2}   ({cartTable.Rows.Count} item(s))";
+            lblCartTotal.Text = $"  Cart Total: ৳{total:N2}   ({cartTable.Rows.Count} item(s))";
         }
 
         private void BtnCheckout_Click(object sender, EventArgs e)
@@ -497,40 +296,8 @@ namespace PropertyRentalServices.Forms
                 new SqlParameter[] { new SqlParameter("@Id", SessionManager.UserId) });
         }
 
-        private Label MakeLabel(string text, int x, int y) =>
-            new Label { Text = text, Font = new Font("Segoe UI", 9, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60), Location = new Point(x, y), AutoSize = true };
 
-        private Button MakeBtn(string text, Color color)
-        {
-            var btn = new Button
-            {
-                Text = text, BackColor = color, ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9, FontStyle.Bold),
-                Height = 36, AutoSize = true, Padding = new Padding(8, 0, 8, 0),
-                Cursor = Cursors.Hand, Margin = new Padding(4)
-            };
-            btn.FlatAppearance.BorderSize = 0;
-            return btn;
-        }
 
-        private DataGridView CreateDGV(Color headerColor)
-        {
-            var dgv = new DataGridView
-            {
-                Dock = DockStyle.Fill, ReadOnly = true, AllowUserToAddRows = false,
-                AllowUserToDeleteRows = false, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                BackgroundColor = Color.White, BorderStyle = BorderStyle.None,
-                GridColor = Color.FromArgb(230, 235, 245),
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                RowHeadersVisible = false, Font = new Font("Segoe UI", 9.5f)
-            };
-            dgv.ColumnHeadersDefaultCellStyle.BackColor = headerColor;
-            dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
-            dgv.ColumnHeadersHeight = 38;
-            dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 255);
-            return dgv;
-        }
 
         private void Logout()
         {
@@ -541,5 +308,122 @@ namespace PropertyRentalServices.Forms
                 this.Close();
             }
         }
+
+        private void LblBedrooms_Click(object sender, EventArgs e)
+        {
+            cmbBedrooms.Focus();
+            cmbBedrooms.DroppedDown = true;
+        }
+
+        private void LblCartTotal_Click(object sender, EventArgs e)
+        {
+            if (cartTable == null || cartTable.Rows.Count == 0)
+            {
+                MessageBox.Show("Your cart is currently empty.\nBrowse properties and add them to your cart.",
+                    "Cart Empty", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            decimal total = 0;
+            foreach (System.Data.DataRow r in cartTable.Rows)
+                total += Convert.ToDecimal(r["TotalPrice"]);
+            MessageBox.Show($"Cart Summary:\n\n{cartTable.Rows.Count} property/properties selected\nGrand Total: \u09F3{total:N2}\n\nClick Checkout to confirm your booking.",
+                "Cart Total", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblHeaderTitle_Click(object sender, EventArgs e)
+        {
+            LoadProperties();
+            LoadMyBookings();
+            LoadMyReviews();
+            MessageBox.Show("Dashboard refreshed successfully.", "Refreshed",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblLocation_Click(object sender, EventArgs e)
+        {
+            cmbLocation.Focus();
+            cmbLocation.DroppedDown = true;
+        }
+
+        private void LblMaxPrice_Click(object sender, EventArgs e)
+        {
+            txtMaxPrice.Focus();
+            txtMaxPrice.SelectAll();
+        }
+
+        private void LblMinPrice_Click(object sender, EventArgs e)
+        {
+            txtMinPrice.Focus();
+            txtMinPrice.SelectAll();
+        }
+
+        private void LblSearch_Click(object sender, EventArgs e)
+        {
+            txtSearch.Focus();
+            txtSearch.SelectAll();
+        }
+
+        private void LblStatus_Click(object sender, EventArgs e)
+        {
+            cmbStatus.Focus();
+            cmbStatus.DroppedDown = true;
+        }
+
+        private void TxtMaxPrice_Enter(object sender, EventArgs e)
+        {
+            txtMaxPrice.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+            if (txtMaxPrice.Text == "0") txtMaxPrice.Clear();
+        }
+
+        private void TxtMaxPrice_TextChanged(object sender, EventArgs e)
+        {
+            bool valid = txtMaxPrice.Text.Length == 0 || (decimal.TryParse(txtMaxPrice.Text, out decimal mx) && mx >= 0);
+            txtMaxPrice.BackColor = valid
+                ? System.Drawing.Color.FromArgb(240, 248, 255)
+                : System.Drawing.Color.FromArgb(255, 235, 235);
+        }
+
+        private void TxtMinPrice_Enter(object sender, EventArgs e)
+        {
+            txtMinPrice.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+            if (txtMinPrice.Text == "0") txtMinPrice.Clear();
+        }
+
+        private void TxtMinPrice_TextChanged(object sender, EventArgs e)
+        {
+            bool valid = txtMinPrice.Text.Length == 0 || (decimal.TryParse(txtMinPrice.Text, out decimal mn) && mn >= 0);
+            txtMinPrice.BackColor = valid
+                ? System.Drawing.Color.FromArgb(240, 248, 255)
+                : System.Drawing.Color.FromArgb(255, 235, 235);
+        }
+
+        private void TxtSearch_Enter(object sender, EventArgs e)
+        {
+            txtSearch.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtSearch_TextChanged(object sender, EventArgs e)
+        {
+            txtSearch.BackColor = txtSearch.Text.Length > 0
+                ? System.Drawing.Color.FromArgb(240, 248, 255)
+                : System.Drawing.Color.White;
+            if (txtSearch.Text.Length == 0)
+                LoadProperties();
+        }
+        private void CmbLocation_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            LoadProperties();
+        }
+
+        private void CmbBedrooms_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            LoadProperties();
+        }
+
+        private void CmbStatus_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            LoadProperties();
+        }
+
     }
 }

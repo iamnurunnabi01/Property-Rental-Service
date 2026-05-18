@@ -1,4 +1,4 @@
-namespace PropertyRentalServices.Models
+﻿namespace PropertyRentalServices.Models
 {
     public static class SessionManager
     {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
@@ -7,119 +7,26 @@ using PropertyRentalServices.Database;
 
 namespace PropertyRentalServices.Forms
 {
-    public class PaymentForm : Form
+    public partial class PaymentForm : Form
     {
         private DataTable cartTable;
         private decimal grandTotal;
         private int customerId;
-        private TextBox txtCardName, txtCardNumber, txtExpiry, txtCVV;
-        private ComboBox cmbMethod;
-        private Label lblTotal;
 
         public PaymentForm(DataTable cart, decimal total, int custId)
         {
             cartTable = cart;
             grandTotal = total;
             customerId = custId;
-            InitializeComponents();
+            InitializeComponent();
+            lblTotal.Text = "Grand Total:  ৳" + grandTotal.ToString("N2");
+            if (cmbMethod.Items.Count > 0)
+                cmbMethod.SelectedIndex = 0;
         }
 
-        private void InitializeComponents()
-        {
-            this.Text = "Payment";
-            this.Size = new Size(520, 620);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.BackColor = Color.White;
+        private void BtnCancel_Click(object sender, EventArgs e) { this.Close(); }
 
-            // Header
-            var header = new Panel { Dock = DockStyle.Top, Height = 70, BackColor = Color.FromArgb(20, 150, 80) };
-            header.Controls.Add(new Label
-            {
-                Text = "💳  Secure Payment",
-                ForeColor = Color.White, Font = new Font("Segoe UI", 16, FontStyle.Bold),
-                Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter
-            });
 
-            int y = 90, x = 40, w = 420;
-
-            // Order Summary
-            var summaryBox = new Panel
-            {
-                Location = new Point(x, y), Size = new Size(w, 90),
-                BackColor = Color.FromArgb(240, 255, 245),
-                BorderStyle = BorderStyle.FixedSingle
-            };
-            summaryBox.Controls.Add(new Label
-            {
-                Text = $"📋 Booking Summary\n{cartTable.Rows.Count} property/properties",
-                Location = new Point(10, 8), AutoSize = true,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(20, 100, 60)
-            });
-            lblTotal = new Label
-            {
-                Text = $"Grand Total:  ৳{grandTotal:N2}",
-                Location = new Point(10, 50), AutoSize = true,
-                Font = new Font("Segoe UI", 14, FontStyle.Bold), ForeColor = Color.FromArgb(20, 150, 80)
-            };
-            summaryBox.Controls.Add(lblTotal);
-            this.Controls.Add(summaryBox);
-            y += 110;
-
-            // Payment Method
-            AddLabel("Payment Method", x, y); y += 22;
-            cmbMethod = new ComboBox
-            {
-                Location = new Point(x, y), Size = new Size(w, 30),
-                DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 11), FlatStyle = FlatStyle.Flat
-            };
-            cmbMethod.Items.AddRange(new object[] { "Credit Card", "Debit Card", "Online Banking", "Mobile Banking (bKash)", "Cash on Arrival" });
-            cmbMethod.SelectedIndex = 0;
-            this.Controls.Add(cmbMethod);
-            y += 45;
-
-            AddLabel("Cardholder Name", x, y); y += 22;
-            txtCardName = MakeTB(x, y, w, "Full name on card"); y += 45;
-
-            AddLabel("Card Number", x, y); y += 22;
-            txtCardNumber = MakeTB(x, y, w, "XXXX XXXX XXXX XXXX"); y += 45;
-
-            var expCvvPanel = new Panel { Location = new Point(x, y), Size = new Size(w, 70) };
-            AddLabel("Expiry (MM/YY)", 0, 0, expCvvPanel); 
-            txtExpiry = new TextBox { Location = new Point(0, 22), Size = new Size(190, 30), Font = new Font("Segoe UI", 11), BorderStyle = BorderStyle.FixedSingle };
-            AddLabel("CVV", 210, 0, expCvvPanel);
-            txtCVV = new TextBox { Location = new Point(210, 22), Size = new Size(210, 30), Font = new Font("Segoe UI", 11), BorderStyle = BorderStyle.FixedSingle, PasswordChar = '●' };
-            expCvvPanel.Controls.AddRange(new Control[] { txtExpiry, txtCVV });
-            this.Controls.Add(expCvvPanel);
-            y += 75;
-
-            var btnPay = new Button
-            {
-                Text = $"✅  PAY  ৳{grandTotal:N2}",
-                Location = new Point(x, y), Size = new Size(w, 50),
-                Font = new Font("Segoe UI", 13, FontStyle.Bold),
-                BackColor = Color.FromArgb(20, 150, 80), ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand
-            };
-            btnPay.FlatAppearance.BorderSize = 0;
-            btnPay.Click += BtnPay_Click;
-            this.Controls.Add(btnPay);
-
-            var btnCancel = new Button
-            {
-                Text = "Cancel",
-                Location = new Point(x, y + 58), Size = new Size(w, 36),
-                Font = new Font("Segoe UI", 10),
-                BackColor = Color.White, ForeColor = Color.Gray,
-                FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand
-            };
-            btnCancel.FlatAppearance.BorderColor = Color.LightGray;
-            btnCancel.Click += (s, e) => this.Close();
-            this.Controls.Add(btnCancel);
-
-            this.Controls.Add(header);
-        }
 
         private void AddLabel(string text, int x, int y, Control parent = null)
         {
@@ -225,5 +132,130 @@ namespace PropertyRentalServices.Forms
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        private void LblCardName_Click(object sender, EventArgs e)
+        {
+            txtCardName.Focus();
+            txtCardName.SelectAll();
+        }
+
+        private void LblCardNumber_Click(object sender, EventArgs e)
+        {
+            txtCardNumber.Focus();
+            txtCardNumber.SelectAll();
+        }
+
+        private void LblCvv_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("CVV is the 3-digit security code on the back of your card.\n(4 digits for Amex, printed on the front)",
+                "CVV Help", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            txtCVV.Focus();
+        }
+
+        private void LblExpiry_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Enter expiry date in MM/YY format.\nExample: 09/27",
+                "Expiry Help", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            txtExpiry.Focus();
+        }
+
+        private void LblHeaderTitle_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Secure Payment\n\nAll transactions are encrypted and processed securely.\nYour card details are not stored.",
+                "Payment Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblMethodLabel_Click(object sender, EventArgs e)
+        {
+            cmbMethod.Focus();
+            cmbMethod.DroppedDown = true;
+        }
+
+        private void LblSummaryInfo_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Booking summary shows all properties you are about to book.\nPlease review before completing payment.",
+                "Summary Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void LblTotal_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Grand Total includes all selected properties.\nNo hidden charges apply.",
+                "Total Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void TxtCVV_Enter(object sender, EventArgs e)
+        {
+            txtCVV.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtCVV_TextChanged(object sender, EventArgs e)
+        {
+            bool valid = System.Text.RegularExpressions.Regex.IsMatch(txtCVV.Text, @"^\d{3,4}$");
+            txtCVV.BackColor = (txtCVV.Text.Length == 0 || valid)
+                ? System.Drawing.Color.FromArgb(240, 248, 255)
+                : System.Drawing.Color.FromArgb(255, 235, 235);
+        }
+
+        private void TxtCardName_Enter(object sender, EventArgs e)
+        {
+            txtCardName.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtCardName_TextChanged(object sender, EventArgs e)
+        {
+            bool valid = txtCardName.Text.Trim().Length >= 3;
+            txtCardName.BackColor = (txtCardName.Text.Length == 0 || valid)
+                ? System.Drawing.Color.FromArgb(240, 248, 255)
+                : System.Drawing.Color.FromArgb(255, 235, 235);
+        }
+
+        private void TxtCardNumber_Enter(object sender, EventArgs e)
+        {
+            txtCardNumber.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtCardNumber_TextChanged(object sender, EventArgs e)
+        {
+            string digits = System.Text.RegularExpressions.Regex.Replace(txtCardNumber.Text, @"\D", "");
+            bool valid = digits.Length == 16;
+            txtCardNumber.BackColor = (txtCardNumber.Text.Length == 0 || valid)
+                ? System.Drawing.Color.FromArgb(240, 248, 255)
+                : System.Drawing.Color.FromArgb(255, 235, 235);
+        }
+
+        private void TxtExpiry_Enter(object sender, EventArgs e)
+        {
+            txtExpiry.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+        }
+
+        private void TxtExpiry_TextChanged(object sender, EventArgs e)
+        {
+            bool valid = System.Text.RegularExpressions.Regex.IsMatch(txtExpiry.Text, @"^(0[1-9]|1[0-2])\/\d{2}$");
+            txtExpiry.BackColor = (txtExpiry.Text.Length == 0 || valid)
+                ? System.Drawing.Color.FromArgb(240, 248, 255)
+                : System.Drawing.Color.FromArgb(255, 235, 235);
+        }
+        private void CmbMethod_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string method = cmbMethod.SelectedItem?.ToString();
+            bool isCard = (method == "Credit Card" || method == "Debit Card");
+            // Show/hide card fields based on selected payment method
+            bool hasTxtFields = txtCardName != null;
+            if (hasTxtFields)
+            {
+                txtCardName.Enabled    = isCard;
+                txtCardNumber.Enabled  = isCard;
+                txtExpiry.Enabled      = isCard;
+                txtCVV.Enabled         = isCard;
+                txtCardName.BackColor  = isCard ? System.Drawing.Color.White : System.Drawing.Color.FromArgb(240, 240, 240);
+                txtCardNumber.BackColor = isCard ? System.Drawing.Color.White : System.Drawing.Color.FromArgb(240, 240, 240);
+                txtExpiry.BackColor    = isCard ? System.Drawing.Color.White : System.Drawing.Color.FromArgb(240, 240, 240);
+                txtCVV.BackColor       = isCard ? System.Drawing.Color.White : System.Drawing.Color.FromArgb(240, 240, 240);
+            }
+            if (!isCard && method != null)
+                MessageBox.Show($"Selected: {method}\n\nNo card details required for this payment method. Click Pay to complete your booking.",
+                    "Payment Method", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
     }
 }
