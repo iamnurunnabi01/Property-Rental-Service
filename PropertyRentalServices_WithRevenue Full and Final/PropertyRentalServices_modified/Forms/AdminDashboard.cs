@@ -41,6 +41,16 @@ namespace PropertyRentalServices.Forms
             LoadBookings();
             LoadReviews();
             LoadRevenue();
+            RefreshStats();
+        }
+
+        private void RefreshStats()
+        {
+            panelStats.Controls.Clear();
+            panelStats.Controls.Add(CreateStatCard("Total Users",   GetCount("Users"),    System.Drawing.Color.FromArgb(30, 100, 200),  10));
+            panelStats.Controls.Add(CreateStatCard("Properties",    GetCount("Property"), System.Drawing.Color.FromArgb(20, 150, 100), 205));
+            panelStats.Controls.Add(CreateStatCard("Bookings",      GetCount("Booking"),  System.Drawing.Color.FromArgb(200, 120, 20), 400));
+            panelStats.Controls.Add(CreateStatCard("Revenue (৳)",  GetTotalRevenue(),    System.Drawing.Color.FromArgb(120, 40, 160), 595));
         }
 
         private void BtnRefreshUsers_Click(object sender, EventArgs e) { LoadUsers(); }
@@ -48,11 +58,11 @@ namespace PropertyRentalServices.Forms
         private void BtnRefreshBookings_Click(object sender, EventArgs e) { LoadBookings(); }
         private void BtnRefreshReviews_Click(object sender, EventArgs e) { LoadReviews(); }
         private void BtnRefreshRevenue_Click(object sender, EventArgs e) { LoadRevenue(); }
+        private void BtnRefreshActualRevenue_Click(object sender, EventArgs e) { LoadActualRevenue(); }
         private void BtnLogout_Click(object sender, EventArgs e) { Logout(); }
         private void AdminDashboard_FormClosed(object sender, System.Windows.Forms.FormClosedEventArgs e)
         {
-            SessionManager.Clear();
-            Application.Exit();
+            // Do not call Application.Exit() here — logout shows LoginForm and this would kill it
         }
 
 
@@ -118,6 +128,7 @@ namespace PropertyRentalServices.Forms
             LoadBookings();
             LoadReviews();
             LoadRevenue();
+            LoadActualRevenue();
         }
 
         private void LoadUsers()
@@ -286,6 +297,69 @@ namespace PropertyRentalServices.Forms
             if (lblTotalRentValue  != null) lblTotalRentValue.Text  = totalRent.ToString("N0");
             if (lblAdminShareValue != null) lblAdminShareValue.Text  = adminShare.ToString("N0");
             if (lblTotalPaymentsValue != null) lblTotalPaymentsValue.Text = confirmedCount.ToString();
+        }
+
+        private Label lblActualTotalValue;
+        private Label lblActualCountValue;
+
+        private void LoadActualRevenue()
+        {
+            string sql = @"
+                SELECT
+                    b.BookingId                                             AS [Booking ID],
+                    p.Title                                                 AS [Property],
+                    u.Name                                                  AS [Customer],
+                    CONVERT(VARCHAR(10), b.StartDate, 23)                   AS [Check-In],
+                    CONVERT(VARCHAR(10), b.EndDate,   23)                   AS [Check-Out],
+                    b.TotalPrice                                            AS [Total Rent (৳)],
+                    CAST(b.TotalPrice * 0.10 AS DECIMAL(10,2))              AS [Admin Actual Revenue (৳)],
+                    CONVERT(VARCHAR(16), b.BookedAt, 120)                   AS [Booked At]
+                FROM Booking b
+                JOIN Property p ON b.PropertyId = p.PropertyId
+                JOIN Users    u ON b.CustomerId  = u.UserId
+                WHERE b.Status = 'Confirmed'
+                ORDER BY b.BookedAt DESC";
+
+            var dt = DBConnection.ExecuteQuery(sql);
+            dgvActualRevenue.DataSource = dt;
+
+            // Highlight the admin revenue column
+            if (dgvActualRevenue.Columns.Contains("Admin Actual Revenue (৳)"))
+            {
+                dgvActualRevenue.Columns["Admin Actual Revenue (৳)"].DefaultCellStyle.ForeColor = Color.FromArgb(30, 80, 180);
+                dgvActualRevenue.Columns["Admin Actual Revenue (৳)"].DefaultCellStyle.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
+                dgvActualRevenue.Columns["Admin Actual Revenue (৳)"].DefaultCellStyle.BackColor = Color.FromArgb(235, 245, 255);
+            }
+
+            // Summary totals for the summary panel
+            object totalObj = DBConnection.ExecuteScalar(
+                "SELECT ISNULL(SUM(TotalPrice)*0.10,0) FROM Booking WHERE Status='Confirmed'");
+            decimal actualTotal = totalObj != null ? Convert.ToDecimal(totalObj) : 0m;
+
+            object countObj = DBConnection.ExecuteScalar(
+                "SELECT COUNT(*) FROM Booking WHERE Status='Confirmed'");
+            int bookingCount = countObj != null ? Convert.ToInt32(countObj) : 0;
+
+            // Build or update summary cards
+            panelActualRevSummary.Controls.Clear();
+            panelActualRevSummary.Controls.Add(BuildActualRevCard(
+                "Admin Actual Revenue (৳)", actualTotal.ToString("N0"),
+                Color.FromArgb(30, 80, 180), 10));
+            panelActualRevSummary.Controls.Add(BuildActualRevCard(
+                "Confirmed Bookings", bookingCount.ToString(),
+                Color.FromArgb(20, 130, 76), 210));
+            panelActualRevSummary.Controls.Add(BuildActualRevCard(
+                "Platform Share Rate", "10%",
+                Color.FromArgb(150, 80, 0), 410));
+        }
+
+        private Panel BuildActualRevCard(string title, string value, Color color, int left)
+        {
+            var card = new Panel { Size = new Size(190, 72), Location = new Point(left, 8), BackColor = Color.White };
+            card.Paint += (s, e) => e.Graphics.FillRectangle(new SolidBrush(color), 0, 0, 7, 72);
+            card.Controls.Add(new Label { Text = title, Font = new Font("Segoe UI", 8.5f), ForeColor = Color.Gray, Location = new Point(14, 9), AutoSize = true });
+            card.Controls.Add(new Label { Text = value, Font = new Font("Segoe UI", 16, FontStyle.Bold), ForeColor = color, Location = new Point(12, 28), AutoSize = true });
+            return card;
         }
 
         private void Logout()

@@ -47,8 +47,7 @@ namespace PropertyRentalServices.Forms
         private void BtnLogout_Click(object sender, EventArgs e) { Logout(); }
         private void CustomerDashboard_FormClosed(object sender, System.Windows.Forms.FormClosedEventArgs e)
         {
-            SessionManager.Clear();
-            System.Windows.Forms.Application.Exit();
+            // Do not call Application.Exit() here — logout shows LoginForm and this would kill it
         }
 
         private void InitializeCart()

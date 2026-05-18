@@ -228,6 +228,8 @@
             this.lblEmail.Click += new System.EventHandler(this.LblEmail_Click);
             this.lblPassword.Click += new System.EventHandler(this.LblPassword_Click);
             this.lblOr.Click += new System.EventHandler(this.LblOr_Click);
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.LoginForm_FormClosed);
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.LoginForm_FormClosed);
             this.txtEmail.Enter += new System.EventHandler(this.TxtEmail_Enter);
             this.txtEmail.TextChanged += new System.EventHandler(this.TxtEmail_TextChanged);
             this.txtPassword.Enter += new System.EventHandler(this.TxtPassword_Enter);

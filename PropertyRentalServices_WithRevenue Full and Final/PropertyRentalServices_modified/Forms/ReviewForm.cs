@@ -116,11 +116,6 @@ namespace PropertyRentalServices.Forms
             txtComment.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
         }
 
-        private void lblHeaderTitle_Click(object sender, EventArgs e)
-        {
-
-        }
-
         private void TxtComment_TextChanged(object sender, EventArgs e)
         {
             int len = txtComment.Text.Trim().Length;

@@ -15,6 +15,7 @@ namespace PropertyRentalServices.Forms
         public OwnerDashboard()
         {
             InitializeComponent();
+            cmbStatus.SelectedIndex = 0; // prevent null SelectedItem crash
 
             // Build earnings summary cards and wire up the label fields
             var card1 = BuildEarnCard("Total Revenue (৳)", "0", System.Drawing.Color.FromArgb(20, 130, 76), out lblEarnTotal);
@@ -33,6 +34,16 @@ namespace PropertyRentalServices.Forms
             LoadProperties();
             LoadEarnings();
             LoadOffers();
+            RefreshStats();
+        }
+
+        private void RefreshStats()
+        {
+            panelStats.Controls.Clear();
+            panelStats.Controls.Add(CreateStat("My Properties",      GetPropCount(),    System.Drawing.Color.FromArgb(30, 100, 200),  10));
+            panelStats.Controls.Add(CreateStat("Confirmed Bookings",  GetBookingCount(), System.Drawing.Color.FromArgb(20, 150, 100), 205));
+            panelStats.Controls.Add(CreateStat("Total Revenue (৳)",   GetTotalRent(),    System.Drawing.Color.FromArgb(200, 120, 20), 400));
+            panelStats.Controls.Add(CreateStat("Revenue after 10% (৳)", GetOwnerRevenue(), System.Drawing.Color.FromArgb(60, 160, 80),  595));
         }
 
         private void BtnClear_Click(object sender, EventArgs e) { ClearForm(); }
@@ -41,8 +52,7 @@ namespace PropertyRentalServices.Forms
         private void BtnRefreshOffers_Click(object sender, EventArgs e) { LoadOffers(); }
         private void OwnerDashboard_FormClosed(object sender, System.Windows.Forms.FormClosedEventArgs e)
         {
-            SessionManager.Clear();
-            Application.Exit();
+            // Do not call Application.Exit() here — logout shows LoginForm and this would kill it
         }
 
 
@@ -226,6 +236,7 @@ namespace PropertyRentalServices.Forms
                 MessageBox.Show("Property added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 ClearForm();
                 LoadProperties();
+                RefreshStats();
             }
         }
 
@@ -252,6 +263,7 @@ namespace PropertyRentalServices.Forms
                 MessageBox.Show("Property updated!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 ClearForm();
                 LoadProperties();
+                RefreshStats();
             }
         }
 
@@ -408,7 +420,7 @@ namespace PropertyRentalServices.Forms
                 new SqlParameter("@Location", txtLocation.Text.Trim()),
                 new SqlParameter("@Price", decimal.Parse(txtPrice.Text)),
                 new SqlParameter("@Bedrooms", int.Parse(txtBedrooms.Text)),
-                new SqlParameter("@Status", cmbStatus.SelectedItem.ToString()),
+                new SqlParameter("@Status", cmbStatus.SelectedItem?.ToString() ?? "Available"),
                 new SqlParameter("@Desc", txtDescription.Text.Trim())
             };
         }

@@ -42,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Database\DBConnection.cs" />
+
     <!-- LoginForm -->
     <Compile Include="Forms\LoginForm.cs">
       <SubType>Form</SubType>
@@ -49,6 +50,7 @@
     <Compile Include="Forms\LoginForm.Designer.cs">
       <DependentUpon>LoginForm.cs</DependentUpon>
     </Compile>
+
     <!-- RegisterForm -->
     <Compile Include="Forms\RegisterForm.cs">
       <SubType>Form</SubType>
@@ -56,6 +58,7 @@
     <Compile Include="Forms\RegisterForm.Designer.cs">
       <DependentUpon>RegisterForm.cs</DependentUpon>
     </Compile>
+
     <!-- AdminDashboard -->
     <Compile Include="Forms\AdminDashboard.cs">
       <SubType>Form</SubType>
@@ -63,6 +66,7 @@
     <Compile Include="Forms\AdminDashboard.Designer.cs">
       <DependentUpon>AdminDashboard.cs</DependentUpon>
     </Compile>
+
     <!-- OwnerDashboard -->
     <Compile Include="Forms\OwnerDashboard.cs">
       <SubType>Form</SubType>
@@ -70,6 +74,7 @@
     <Compile Include="Forms\OwnerDashboard.Designer.cs">
       <DependentUpon>OwnerDashboard.cs</DependentUpon>
     </Compile>
+
     <!-- CustomerDashboard -->
     <Compile Include="Forms\CustomerDashboard.cs">
       <SubType>Form</SubType>
@@ -77,6 +82,7 @@
     <Compile Include="Forms\CustomerDashboard.Designer.cs">
       <DependentUpon>CustomerDashboard.cs</DependentUpon>
     </Compile>
+
     <!-- PaymentForm -->
     <Compile Include="Forms\PaymentForm.cs">
       <SubType>Form</SubType>
@@ -84,6 +90,7 @@
     <Compile Include="Forms\PaymentForm.Designer.cs">
       <DependentUpon>PaymentForm.cs</DependentUpon>
     </Compile>
+
     <!-- ReviewForm + ReviewViewForm (both in one file pair) -->
     <Compile Include="Forms\ReviewForm.cs">
       <SubType>Form</SubType>
@@ -91,19 +98,12 @@
     <Compile Include="Forms\ReviewForm.Designer.cs">
       <DependentUpon>ReviewForm.cs</DependentUpon>
     </Compile>
+
     <Compile Include="Models\SessionManager.cs" />
     <Compile Include="Program.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Forms\AdminDashboard.resx">
-      <DependentUpon>AdminDashboard.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Forms\ReviewForm.resx">
-      <DependentUpon>ReviewForm.cs</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,10 +1,7 @@
-C:\Users\ankon\Downloads\PropertyRentalServices fff\PropertyRentalServices_fixed_output\bin\Debug\PropertyRentalServices.exe.config
-C:\Users\ankon\Downloads\PropertyRentalServices fff\PropertyRentalServices_fixed_output\bin\Debug\PropertyRentalServices.exe
-C:\Users\ankon\Downloads\PropertyRentalServices fff\PropertyRentalServices_fixed_output\bin\Debug\PropertyRentalServices.pdb
-C:\Users\ankon\Downloads\PropertyRentalServices fff\PropertyRentalServices_fixed_output\obj\Debug\PropertyRentalServices.csproj.AssemblyReference.cache
-C:\Users\ankon\Downloads\PropertyRentalServices fff\PropertyRentalServices_fixed_output\obj\Debug\PropertyRentalServices.Forms.AdminDashboard.resources
-C:\Users\ankon\Downloads\PropertyRentalServices fff\PropertyRentalServices_fixed_output\obj\Debug\PropertyRentalServices.Forms.ReviewForm.resources
-C:\Users\ankon\Downloads\PropertyRentalServices fff\PropertyRentalServices_fixed_output\obj\Debug\PropertyRentalServices.csproj.GenerateResource.cache
-C:\Users\ankon\Downloads\PropertyRentalServices fff\PropertyRentalServices_fixed_output\obj\Debug\PropertyRentalServices.csproj.CoreCompileInputs.cache
-C:\Users\ankon\Downloads\PropertyRentalServices fff\PropertyRentalServices_fixed_output\obj\Debug\PropertyRentalServices.exe
-C:\Users\ankon\Downloads\PropertyRentalServices fff\PropertyRentalServices_fixed_output\obj\Debug\PropertyRentalServices.pdb
+C:\Users\ankon\Downloads\PropertyRentalServices_Fixed (4)\prs_final\bin\Debug\PropertyRentalServices.exe.config
+C:\Users\ankon\Downloads\PropertyRentalServices_Fixed (4)\prs_final\bin\Debug\PropertyRentalServices.exe
+C:\Users\ankon\Downloads\PropertyRentalServices_Fixed (4)\prs_final\bin\Debug\PropertyRentalServices.pdb
+C:\Users\ankon\Downloads\PropertyRentalServices_Fixed (4)\prs_final\obj\Debug\PropertyRentalServices.csproj.AssemblyReference.cache
+C:\Users\ankon\Downloads\PropertyRentalServices_Fixed (4)\prs_final\obj\Debug\PropertyRentalServices.csproj.CoreCompileInputs.cache
+C:\Users\ankon\Downloads\PropertyRentalServices_Fixed (4)\prs_final\obj\Debug\PropertyRentalServices.exe
+C:\Users\ankon\Downloads\PropertyRentalServices_Fixed (4)\prs_final\obj\Debug\PropertyRentalServices.pdb
